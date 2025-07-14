@@ -1,0 +1,22 @@
+{
+  "name": "desktopgui",
+  "version": "1.0.0",
+  "description": "This is a desktop app that will be used to run the Client-server connection as well as the oil sands gui",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikejattu/OilSandsDesktopGUI.git"
+  },
+  "author": "Mike Jattu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mikejattu/OilSandsDesktopGUI/issues"
+  },
+  "homepage": "https://github.com/mikejattu/OilSandsDesktopGUI#readme",
+  "devDependencies": {
+    "electron": "^37.2.1"
+  }
+}
