@@ -1,6 +1,6 @@
 # OilSandsDesktopGUI
 
-This is a desktop application that loads the [GitHub website](https://github.com). It is built using [Electron](https://www.electronjs.org/).
+This is a desktop application that loads the Oil Sands GUI. It is built using [Electron](https://www.electronjs.org/).
 
 ## To Use
 
