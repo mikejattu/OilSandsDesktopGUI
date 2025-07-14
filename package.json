@@ -4,6 +4,7 @@
   "description": "This is a desktop app that will be used to run the Client-server connection as well as the oil sands gui",
   "main": "main.js",
   "scripts": {
+    "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
