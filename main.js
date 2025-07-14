@@ -6,7 +6,7 @@ const loadWebsite = () => {
     height: 600
   })
 
-  win.loadURL('https://github.com')
+  win.loadURL('https://github.com/mikejattu')
   win.once('ready-to-show', () => {
   win.show()
 })
