@@ -1,15 +1,19 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
+const path = require('path');
+const opcua = require('./opcua-backend');
 
-const loadWebsite = () => {
+const createWindow = () => {
   const win = new BrowserWindow({
-    width: 800,
-    height: 600
-  })
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+    }
+  });
 
-  win.loadURL('https://github.com/mikejattu')
-  win.once('ready-to-show', () => {
-  win.show()
-})
+  //win.loadURL('http://localhost:3000'); // GUI runs on local web server
+  win.loadFile('renderer/index.html'); 
 }
 
 app.whenReady().then(() => {
@@ -24,3 +28,13 @@ app.on('window-all-closed', () => {
     if (BrowserWindow.getAllWindows().length === 0) loadWebsite()
   })
 
+// Handle IPC messages from renderer
+ipcMain.handle('opcua:read', async (_, nodeId) => {
+  return await opcua.readNode(nodeId);
+});
+
+ipcMain.handle('opcua:write', async (_, nodeId, value) => {
+  return await opcua.writeNode(nodeId, value);
+});
+
+app.whenReady().then(createWindow);

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPC UA Dashboard</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to match the dark theme and specific elements */
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font as per instructions */
+            background-color: #1a202c; /* Dark background color */
+            color: #e2e8f0; /* Light text color */
+            overflow: hidden; /* Prevent body scroll, content will scroll within panels */
+        }
+
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #2d3748; /* Darker track */
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568; /* Lighter thumb */
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* Even lighter on hover */
+        }
+
+        .panel {
+            background-color: #2d3748; /* Panel background */
+            border-radius: 0.5rem; /* Rounded corners */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Subtle shadow */
+        }
+
+        .tab-button {
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            color: #a0aec0; /* Light gray for inactive tabs */
+            transition: all 0.2s ease-in-out;
+        }
+
+        .tab-button.active {
+            background-color: #4a5568; /* Active tab background */
+            color: #e2e8f0; /* Active tab text color */
+        }
+
+        .tree-view ul {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .tree-view li {
+            cursor: pointer;
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .tree-view li:hover {
+            background-color: #4a5568; /* Hover effect for tree items */
+            border-radius: 0.25rem;
+        }
+
+        .tree-view .arrow {
+            margin-right: 0.25rem;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .tree-view .arrow.rotated {
+            transform: rotate(90deg);
+        }
+
+        .context-menu {
+            position: absolute;
+            background-color: #2d3748;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 100;
+            min-width: 150px;
+            padding: 0.5rem 0;
+        }
+
+        .context-menu-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: #e2e8f0;
+        }
+
+        .context-menu-item:hover {
+            background-color: #4a5568;
+        }
+
+        /* Basic styling for the graph area - will be replaced by a charting library */
+        .graph-placeholder {
+            background-color: #1a202c;
+            border: 1px solid #4a5568;
+            height: 200px; /* Fixed height for placeholder */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #a0aec0;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+    <!-- Top Header Bar -->
+    <header class="flex items-center justify-between bg-gray-800 p-3 shadow-md">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-white">OPC UA Dashboard</h1>
+            <span class="text-sm text-gray-400">opc.tcp://localhost:4840</span>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-200 ease-in-out">
+                Connect options
+            </button>
+            <button class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-200 ease-in-out">
+                Connect
+            </button>
+            <button class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md shadow-md transition duration-200 ease-in-out">
+                Disconnect
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex flex-grow p-4 space-x-4 overflow-hidden">
+        <!-- Left Panel: Display Name (Tree View) -->
+        <section class="w-1/3 flex flex-col space-y-4">
+            <div class="panel flex-grow flex flex-col overflow-hidden">
+                <div class="bg-gray-700 p-3 rounded-t-lg font-semibold text-lg">Display Name</div>
+                <div class="p-4 flex-grow overflow-y-auto tree-view">
+                    <!-- Tree view structure -->
+                    <ul>
+                        <li>
+                            <span class="arrow">&#9658;</span> Root
+                            <ul>
+                                <li>
+                                    <span class="arrow">&#9658;</span> Objects
+                                    <ul>
+                                        <li><span class="arrow">&#9658;</span> MyFolder</li>
+                                        <li><span class="arrow">&#9658;</span> MyObject</li>
+                                        <li><span class="arrow">&#9658;</span> MyVariableTimeVar</li>
+                                        <li><span class="arrow">&#9658;</span> MySin
+                                            <ul>
+                                                <li>MyStringVariable</li>
+                                                <li id="my-variable-item" class="relative">MyVariable</li>
+                                                <li>multiply</li>
+                                                <li>myStronglyTypedVar</li>
+                                                <li>myArrayVal</li>
+                                                <li>mymethod</li>
+                                                <li>myproperty</li>
+                                                <li>myEmptyFolder</li>
+                                            </ul>
+                                        </li>
+                                        <li><span class="arrow">&#9658;</span> MyMethod</li>
+                                    </ul>
+                                </li>
+                                <li><span class="arrow">&#9658;</span> Views</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <!-- Context Menu (hidden by default) -->
+                    <div id="context-menu" class="context-menu hidden">
+                        <div class="context-menu-item" data-action="copy-path">Copy Path</div>
+                        <div class="context-menu-item" data-action="copy-nodeid">Copy NodeId</div>
+                        <div class="context-menu-item" data-action="subscribe-data-change">Subscribe to dataChange</div>
+                        <div class="context-menu-item" data-action="unsubscribe-data-change">Unsubscribe to dataChange</div>
+                        <div class="context-menu-item" data-action="subscribe-events">Subscribe to events</div>
+                        <div class="context-menu-item" data-action="unsubscribe-events">Unsubscribe to events</div>
+                        <div class="context-menu-item" data-action="add-to-graph">Add to Graph</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Attributes, Graph, Tabs -->
+        <section class="w-2/3 flex flex-col space-y-4">
+            <!-- Attributes Panel -->
+            <div class="panel flex-none">
+                <div class="bg-gray-700 p-3 rounded-t-lg font-semibold text-lg">Attributes</div>
+                <div class="p-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                    <!-- Example attributes, these would be dynamically populated -->
+                    <div class="font-semibold">Attribute</div>
+                    <div class="font-semibold">Value</div>
+
+                    <div>BrowseName</div>
+                    <div>MyVariable</div>
+
+                    <div>DataType</div>
+                    <div>Double</div>
+
+                    <div>Description</div>
+                    <div>MyVariable</div>
+
+                    <div>DisplayName</div>
+                    <div>LocalizedText</div>
+
+                    <div>Historizing</div>
+                    <div>Boolean</div>
+
+                    <div>MinimumSamplingInterval</div>
+                    <div>0.0</div>
+
+                    <div>NodeClass</div>
+                    <div>Variable</div>
+
+                    <div>NodeId</div>
+                    <div>ns=2;i=48</div>
+
+                    <div>UserAccessLevel</div>
+                    <div>CurrentRead, CurrentWrite</div>
+
+                    <div>UserWriteMask</div>
+                    <div>0</div>
+
+                    <div>Value</div>
+                    <div>6.7</div>
+
+                    <div>ValueRank</div>
+                    <div>-1</div>
+
+                    <div>ArrayDimensions</div>
+                    <div>null</div>
+
+                    <div>AccessLevel</div>
+                    <div>CurrentRead, CurrentWrite</div>
+
+                    <div>Executable</div>
+                    <div>False</div>
+
+                    <div>RolePermissions</div>
+                    <div>null</div>
+
+                    <div>UserRolePermissions</div>
+                    <div>null</div>
+
+                    <div>WriteMask</div>
+                    <div>0</div>
+
+                    <div>Value SourceTimestamp</div>
+                    <div>None</div>
+                </div>
+                <div class="p-3 bg-gray-700 rounded-b-lg flex justify-end">
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-md text-sm transition duration-200 ease-in-out">
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Graph and Tabs Panel -->
+            <div class="panel flex-grow flex flex-col overflow-hidden">
+                <!-- Tabs for Graph, Events, Subscriptions, etc. -->
+                <div class="flex bg-gray-700 p-2 rounded-t-lg">
+                    <button class="tab-button active" data-tab="graph">Graph</button>
+                    <button class="tab-button" data-tab="events">Events</button>
+                    <button class="tab-button" data-tab="subscriptions">Subscriptions</button>
+                    <button class="tab-button" data-tab="references">References</button>
+                </div>
+                <!-- Tab Content Area -->
+                <div class="p-4 flex-grow overflow-y-auto">
+                    <!-- Graph Tab Content -->
+                    <div id="graph-tab" class="tab-content active">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <label for="num-points" class="text-sm">Number of Points</label>
+                            <input type="number" id="num-points" value="30" class="bg-gray-800 border border-gray-600 rounded-md p-1 w-20 text-center text-white">
+                            <label for="interval" class="text-sm">Interval [s]</label>
+                            <input type="number" id="interval" value="1" class="bg-gray-800 border border-gray-600 rounded-md p-1 w-20 text-center text-white">
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1 px-3 rounded-md text-sm transition duration-200 ease-in-out">
+                                Apply
+                            </button>
+                        </div>
+                        <div class="graph-placeholder">
+                            <!-- Placeholder for the graph. A charting library (e.g., Chart.js, D3.js) would render here. -->
+                            <img src="https://placehold.co/600x200/2d3748/e2e8f0?text=Graph+Placeholder" alt="Graph Placeholder" class="w-full h-auto rounded-md">
+                        </div>
+                    </div>
+                    <!-- Other Tab Contents (hidden by default) -->
+                    <div id="events-tab" class="tab-content hidden">
+                        <p>Events content will go here.</p>
+                    </div>
+                    <div id="subscriptions-tab" class="tab-content hidden">
+                        <p>Subscriptions content will go here.</p>
+                    </div>
+                    <div id="references-tab" class="tab-content hidden">
+                        <p>References content will go here.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Panel: Input/Output Arguments -->
+    <footer class="flex-none p-4 bg-gray-800 shadow-lg mt-4">
+        <div class="panel p-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-semibold text-lg mb-2">Input Arguments</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>Name: None | Data Type: Int64 | Description: None</p>
+                        <p>Name: None | Data Type: Int64 | Description: None</p>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg mb-2">Result</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>Status: StatusCode(Good)</p>
+                    </div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                    <h3 class="font-semibold text-lg mb-2">Output Arguments</h3>
+                    <div class="space-y-2 text-sm">
+                        <p>Data Type: Int64 | Value: </p>
+                    </div>
+                </div>
+                <div class="flex items-end justify-end space-x-2">
+                    <button class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out">
+                        Close
+                    </button>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition duration-200 ease-in-out">
+                        Call Method
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Console/Status Bar at the very bottom -->
+        <div class="bg-gray-900 text-gray-400 text-xs p-2 mt-4 rounded-md overflow-x-auto whitespace-nowrap">
+            <p>File: /home/olivier/opcua-client/uiedgets/attrs_widget.py, line 232, in show_ext_obj</p>
+            <p>Attr: getUAUtil.UAVariant(type, att_type)</p>
+            <p>File: /home/olivier/opcua-client/uiedgets/attrs_widget.py, line 314, in __getattr__</p>
+            <p>Case: AddElement(element) from None</p>
+            <p>AttributeError: ServerState</p>
+            <p>uaclient.main: WARNING - showing error: %s</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Tree View Functionality ---
+            const treeItems = document.querySelectorAll('.tree-view li');
+            treeItems.forEach(item => {
+                const arrow = item.querySelector('.arrow');
+                if (arrow) {
+                    item.addEventListener('click', (event) => {
+                        // Toggle visibility of nested ul
+                        const nestedUl = item.querySelector('ul');
+                        if (nestedUl) {
+                            nestedUl.classList.toggle('hidden');
+                            arrow.classList.toggle('rotated');
+                        }
+                        event.stopPropagation(); // Prevent event from bubbling up to parent li
+                    });
+                }
+            });
+
+            // --- Tab Functionality ---
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Deactivate all buttons and hide all content
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.add('hidden'));
+
+                    // Activate the clicked button and show its content
+                    button.classList.add('active');
+                    const targetTabId = button.dataset.tab + '-tab';
+                    document.getElementById(targetTabId).classList.remove('hidden');
+                });
+            });
+
+            // --- Context Menu Functionality ---
+            const myVariableItem = document.getElementById('my-variable-item');
+            const contextMenu = document.getElementById('context-menu');
+
+            // Prevent default right-click menu on the specific item
+            myVariableItem.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+                contextMenu.style.top = `${event.clientY}px`;
+                contextMenu.style.left = `${event.clientX}px`;
+                contextMenu.classList.remove('hidden');
+            });
+
+            // Hide context menu when clicking anywhere else
+            document.addEventListener('click', (event) => {
+                if (!contextMenu.contains(event.target) && event.target !== myVariableItem) {
+                    contextMenu.classList.add('hidden');
+                }
+            });
+
+            // Handle context menu item clicks
+            contextMenu.addEventListener('click', (event) => {
+                const action = event.target.dataset.action;
+                if (action) {
+                    // In a real Electron app, you would send IPC messages to the main process here
+                    // For now, just log the action
+                    console.log(`Action: ${action} for MyVariable`);
+                    // Example of sending an IPC message (requires Electron's ipcRenderer)
+                    // if (window.electronAPI) {
+                    //     window.electronAPI.send('opcua-action', { action: action, nodeId: 'ns=2;i=48' });
+                    // }
+                    contextMenu.classList.add('hidden'); // Hide menu after click
+                }
+            });
+
+            // Initially hide all nested tree view Uls
+            document.querySelectorAll('.tree-view ul ul').forEach(ul => {
+                ul.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
